@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">BusyCardNet</string>
+    <string name="qr_scan_add_to_network">Add Card to My Network</string>
+    <string name="qr_scan_added_to_network">Added to Your Network</string>
+    <string name="qr_scan_from_gallery">Gallery QR</string>
+    <string name="qr_scan_contact_card_cta">Scan Contact QR</string>
+    <string name="society_maintenance_title">Society Maintenance</string>
+    <string name="society_maintenance_subtitle">Pay CHS / RWA monthly &amp; quarterly bills with instant receipt</string>
+    <string name="society_maintenance_pay_cta">Pay Maintenance</string>
+</resources>
+

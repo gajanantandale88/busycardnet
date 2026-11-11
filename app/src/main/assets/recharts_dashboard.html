@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BCN Recharts Analytics Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      background-color: #0B1120;
+      color: #F1F5F9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    .header-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .badge {
+      background: linear-gradient(135deg, #0284C7, #2563EB);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-type-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      background: #1E293B;
+      padding: 3px;
+      border-radius: 10px;
+    }
+    .chart-type-btn {
+      flex: 1;
+      padding: 7px 4px;
+      border: none;
+      background: transparent;
+      color: #94A3B8;
+      font-size: 10.5px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .chart-type-btn.active {
+      background: #0284C7;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+    }
+    .timeframe-pill-container {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .time-pill {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #CBD5E1;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .time-pill.active {
+      background: #38BDF8;
+      border-color: #38BDF8;
+      color: #0F172A;
+      font-weight: 800;
+    }
+    .chart-card {
+      background: #131D31;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 14px;
+      padding: 14px 10px 8px 10px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+    .chart-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 6px 8px 6px;
+    }
+    .chart-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+    .chart-subtitle {
+      font-size: 10px;
+      color: #94A3B8;
+    }
+    .legend-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      padding: 8px 0 4px 0;
+      font-size: 11px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #CBD5E1;
+    }
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+    .recharts-container {
+      width: 100%;
+      height: 250px;
+      position: relative;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .tooltip-box {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid #38BDF8;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      transition: transform 0.08s ease-out, opacity 0.15s ease;
+      opacity: 0;
+      z-index: 100;
+      min-width: 130px;
+    }
+    .tooltip-date {
+      color: #94A3B8;
+      font-size: 10px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 2px;
+    }
+    .tooltip-val {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 2px 0;
+      font-weight: 700;
+    }
+    .scrub-line {
+      stroke: rgba(148, 163, 184, 0.4);
+      stroke-dasharray: 4 4;
+      stroke-width: 1.5;
+    }
+    .axis-label {
+      font-size: 9px;
+      fill: #94A3B8;
+      font-family: inherit;
+    }
+    .grid-line {
+      stroke: rgba(51, 65, 85, 0.45);
+      stroke-dasharray: 3 3;
+      stroke-width: 1;
+    }
+    .metrics-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .metric-card {
+      background: #1E293B;
+      border-radius: 10px;
+      padding: 10px;
+      border-left: 3px solid #38BDF8;
+    }
+    .metric-card.ctr {
+      border-left-color: #F59E0B;
+    }
+    .metric-label {
+      font-size: 10px;
+      color: #94A3B8;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .metric-number {
+      font-size: 18px;
+      font-weight: 800;
+      color: #F8FAFC;
+    }
+    .metric-sub {
+      font-size: 9.5px;
+      color: #10B981;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Recharts Brand & Live Sync Banner -->
+  <div class="header-panel">
+    <div>
+      <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+        <span>📊 Recharts Analytics</span>
+        <span class="badge">v2.12 Live Engine</span>
+      </div>
+      <div style="font-size: 10px; color: #38BDF8; margin-top: 2px;" id="businessTitle">
+        Business Profile & Ad Click-Through Tracker
+      </div>
+    </div>
+    <div class="timeframe-pill-container" id="timeframeButtons">
+      <div class="time-pill active" onclick="setTimeframe('7D')">7D</div>
+      <div class="time-pill" onclick="setTimeframe('30D')">30D</div>
+      <div class="time-pill" onclick="setTimeframe('90D')">90D</div>
+    </div>
+  </div>
+
+  <!-- Chart View Mode Tabs -->
+  <div class="chart-type-tabs">
+    <button class="chart-type-btn active" id="tab_overview" onclick="switchChartMode('overview')">
+      Profile Views & CTR
+    </button>
+    <button class="chart-type-btn" id="tab_impressions" onclick="switchChartMode('impressions')">
+      Ad Clicks vs Impr.
+    </button>
+    <button class="chart-type-btn" id="tab_ctr" onclick="switchChartMode('ctr')">
+      CTR % Trendline
+    </button>
+  </div>
+
+  <!-- Recharts SVG Visualizer Canvas -->
+  <div class="chart-card">
+    <div class="chart-title-row">
+      <div>
+        <div class="chart-title" id="mainChartTitle">Profile Views vs. Ad CTR (%)</div>
+        <div class="chart-subtitle" id="mainChartSubtitle">Dual-axis Recharts visualization with interactive touch scrubber</div>
+      </div>
+      <div style="font-size: 10px; color: #10B981; font-weight: 700;">
+        ● Live Synced
+      </div>
+    </div>
+
+    <!-- Recharts Container (Hardware-accelerated SVG) -->
+    <div class="recharts-container" id="rechartsContainer">
+      <div class="tooltip-box" id="tooltipBox"></div>
+      <svg id="chartSvg" preserveAspectRatio="none" viewBox="0 0 360 220"></svg>
+    </div>
+
+    <!-- Dynamic Legend -->
+    <div class="legend-row" id="legendRow">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #38BDF8;"></div>
+        <span id="legend1">Profile Views</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #F59E0B;"></div>
+        <span id="legend2">Ad CTR (%)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instant Performance KPIs Grid -->
+  <div class="metrics-summary-grid">
+    <div class="metric-card">
+      <div class="metric-label">Profile Views</div>
+      <div class="metric-number" id="kpiViews">1,510</div>
+      <div class="metric-sub">▲ +24.8% vs last week</div>
+    </div>
+    <div class="metric-card ctr">
+      <div class="metric-label">Avg. Ad CTR</div>
+      <div class="metric-number" id="kpiCtr">5.38%</div>
+      <div class="metric-sub">▲ +1.6% target beat</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Ad Impressions</div>
+      <div class="metric-number" id="kpiImpressions">9,640</div>
+      <div class="metric-sub">Sponsored feeds & radar</div>
+    </div>
+    <div class="metric-card ctr">
+      <div class="metric-label">Ad Click Conversions</div>
+      <div class="metric-number" id="kpiClicks">518</div>
+      <div class="metric-sub">118 direct leads generated</div>
+    </div>
+  </div>
+
+  <!-- Recharts Rendering Script (Autonomous, Responsive, Interactive) -->
+  <script>
+    // Initial Dataset state
+    let currentMode = 'overview'; // 'overview', 'impressions', 'ctr'
+    let currentTimeframe = '7D';
+
+    const datasets = {
+      '7D': [
+        { date: 'Mon', views: 142, visitors: 118, impressions: 890, clicks: 42, ctr: 4.72, leads: 9 },
+        { date: 'Tue', views: 188, visitors: 152, impressions: 1120, clicks: 58, ctr: 5.18, leads: 14 },
+        { date: 'Wed', views: 165, visitors: 139, impressions: 980, clicks: 46, ctr: 4.69, leads: 11 },
+        { date: 'Thu', views: 210, visitors: 176, impressions: 1350, clicks: 74, ctr: 5.48, leads: 18 },
+        { date: 'Fri', views: 245, visitors: 205, impressions: 1580, clicks: 92, ctr: 5.82, leads: 22 },
+        { date: 'Sat', views: 290, visitors: 248, impressions: 1890, clicks: 115, ctr: 6.08, leads: 28 },
+        { date: 'Sun', views: 270, visitors: 224, impressions: 1720, clicks: 98, ctr: 5.70, leads: 24 }
+      ],
+      '30D': [
+        { date: 'Aug 16', views: 130, impressions: 850, clicks: 40, ctr: 4.71, leads: 8 },
+        { date: 'Aug 20', views: 155, impressions: 960, clicks: 49, ctr: 5.10, leads: 11 },
+        { date: 'Aug 24', views: 175, impressions: 1100, clicks: 56, ctr: 5.09, leads: 13 },
+        { date: 'Aug 28', views: 205, impressions: 1280, clicks: 71, ctr: 5.55, leads: 16 },
+        { date: 'Sep 01', views: 230, impressions: 1450, clicks: 82, ctr: 5.66, leads: 19 },
+        { date: 'Sep 05', views: 250, impressions: 1600, clicks: 94, ctr: 5.88, leads: 23 },
+        { date: 'Sep 09', views: 275, impressions: 1750, clicks: 104, ctr: 5.94, leads: 25 },
+        { date: 'Sep 14', views: 295, impressions: 1900, clicks: 118, ctr: 6.21, leads: 29 }
+      ],
+      '90D': [
+        { date: 'Jun W1', views: 420, impressions: 2800, clicks: 125, ctr: 4.46, leads: 28 },
+        { date: 'Jun W3', views: 490, impressions: 3200, clicks: 155, ctr: 4.84, leads: 34 },
+        { date: 'Jul W1', views: 540, impressions: 3600, clicks: 186, ctr: 5.17, leads: 42 },
+        { date: 'Jul W3', views: 610, impressions: 4100, clicks: 225, ctr: 5.49, leads: 51 },
+        { date: 'Aug W1', views: 680, impressions: 4500, clicks: 258, ctr: 5.73, leads: 60 },
+        { date: 'Aug W3', views: 740, impressions: 4900, clicks: 295, ctr: 6.02, leads: 69 },
+        { date: 'Sep W1', views: 820, impressions: 5400, clicks: 335, ctr: 6.20, leads: 78 }
+      ]
+    };
+
+    let activeData = datasets['7D'];
+
+    function setTimeframe(tf) {
+      currentTimeframe = tf;
+      activeData = datasets[tf] || datasets['7D'];
+      
+      document.querySelectorAll('.time-pill').forEach(el => {
+        el.classList.toggle('active', el.textContent.trim() === tf);
+      });
+
+      updateKPIs();
+      renderRechartsChart();
+    }
+
+    function switchChartMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.chart-type-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('tab_' + mode);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (mode === 'overview') {
+        document.getElementById('mainChartTitle').textContent = 'Profile Views vs. Ad CTR (%)';
+        document.getElementById('mainChartSubtitle').textContent = 'Dual-axis Recharts area & line representation with interactive scrubbing';
+        document.getElementById('legend1').textContent = 'Profile Views';
+        document.getElementById('legend2').textContent = 'Ad CTR (%)';
+      } else if (mode === 'impressions') {
+        document.getElementById('mainChartTitle').textContent = 'Ad Impressions vs. Ad Clicks';
+        document.getElementById('mainChartSubtitle').textContent = 'Recharts grouped bar chart with impression volume vs. user click count';
+        document.getElementById('legend1').textContent = 'Ad Impressions';
+        document.getElementById('legend2').textContent = 'Ad Clicks';
+      } else {
+        document.getElementById('mainChartTitle').textContent = 'Click-Through Rate (CTR %) Trend';
+        document.getElementById('mainChartSubtitle').textContent = 'Recharts line chart with 4.5% target benchmark reference line';
+        document.getElementById('legend1').textContent = 'Actual CTR %';
+        document.getElementById('legend2').textContent = 'Target (4.5%)';
+      }
+
+      renderRechartsChart();
+    }
+
+    function updateKPIs() {
+      const totalViews = activeData.reduce((acc, d) => acc + d.views, 0);
+      const totalImpressions = activeData.reduce((acc, d) => acc + d.impressions, 0);
+      const totalClicks = activeData.reduce((acc, d) => acc + d.clicks, 0);
+      const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0;
+      const totalLeads = activeData.reduce((acc, d) => acc + (d.leads || 0), 0);
+
+      document.getElementById('kpiViews').textContent = totalViews.toLocaleString();
+      document.getElementById('kpiImpressions').textContent = totalImpressions.toLocaleString();
+      document.getElementById('kpiClicks').textContent = totalClicks.toLocaleString();
+      document.getElementById('kpiCtr').textContent = avgCtr + '%';
+    }
+
+    // High-precision SVG Recharts Renderer
+    function renderRechartsChart() {
+      const svg = document.getElementById('chartSvg');
+      svg.innerHTML = ''; // reset
+
+      const width = 360;
+      const height = 220;
+      const padding = { top: 20, right: 34, bottom: 25, left: 34 };
+      const chartW = width - padding.left - padding.right;
+      const chartH = height - padding.top - padding.bottom;
+
+      const data = activeData;
+      const n = data.length;
+
+      // Defs (Gradients & Filters)
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stop-color="#38BDF8" stop-opacity="0.5"/>
+          <stop offset="95%" stop-color="#38BDF8" stop-opacity="0.0"/>
+        </linearGradient>
+        <linearGradient id="colorCtr" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stop-color="#F59E0B" stop-opacity="0.4"/>
+          <stop offset="95%" stop-color="#F59E0B" stop-opacity="0.0"/>
+        </linearGradient>
+        <linearGradient id="barGradImps" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6366F1"/>
+          <stop offset="100%" stop-color="#3B82F6"/>
+        </linearGradient>
+        <linearGradient id="barGradClicks" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#10B981"/>
+          <stop offset="100%" stop-color="#059669"/>
+        </linearGradient>
+      `;
+      svg.appendChild(defs);
+
+      // Horizontal Grid Lines
+      for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartH / 4) * i;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', padding.left);
+        line.setAttribute('x2', width - padding.right);
+        line.setAttribute('y1', y);
+        line.setAttribute('y2', y);
+        line.setAttribute('class', 'grid-line');
+        svg.appendChild(line);
+      }
+
+      if (currentMode === 'overview') {
+        // Dual-axis: Left = Views, Right = CTR %
+        const maxViews = Math.max(...data.map(d => d.views)) * 1.15;
+        const maxCtr = Math.max(...data.map(d => d.ctr)) * 1.25;
+
+        // Left Axis Labels (Views)
+        for (let i = 0; i <= 4; i++) {
+          const val = Math.round(maxViews * (1 - i / 4));
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', padding.left - 6);
+          text.setAttribute('y', padding.top + (chartH / 4) * i + 3);
+          text.setAttribute('text-anchor', 'end');
+          text.setAttribute('class', 'axis-label');
+          text.setAttribute('fill', '#38BDF8');
+          text.textContent = val;
+          svg.appendChild(text);
+        }
+
+        // Right Axis Labels (CTR %)
+        for (let i = 0; i <= 4; i++) {
+          const val = (maxCtr * (1 - i / 4)).toFixed(1) + '%';
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', width - padding.right + 6);
+          text.setAttribute('y', padding.top + (chartH / 4) * i + 3);
+          text.setAttribute('text-anchor', 'start');
+          text.setAttribute('class', 'axis-label');
+          text.setAttribute('fill', '#F59E0B');
+          text.textContent = val;
+          svg.appendChild(text);
+        }
+
+        // Generate coordinates for Views Area
+        const viewPoints = data.map((d, i) => {
+          const x = padding.left + (chartW / (n - 1)) * i;
+          const y = padding.top + chartH - (d.views / maxViews) * chartH;
+          return { x, y };
+        });
+
+        // Area path
+        let areaD = `M ${viewPoints[0].x} ${padding.top + chartH}`;
+        viewPoints.forEach(p => areaD += ` L ${p.x} ${p.y}`);
+        areaD += ` L ${viewPoints[viewPoints.length - 1].x} ${padding.top + chartH} Z`;
+
+        const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        areaPath.setAttribute('d', areaD);
+        areaPath.setAttribute('fill', 'url(#colorViews)');
+        svg.appendChild(areaPath);
+
+        // Line path
+        let lineD = `M ${viewPoints[0].x} ${viewPoints[0].y}`;
+        for (let i = 1; i < viewPoints.length; i++) {
+          lineD += ` L ${viewPoints[i].x} ${viewPoints[i].y}`;
+        }
+        const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        linePath.setAttribute('d', lineD);
+        linePath.setAttribute('fill', 'none');
+        linePath.setAttribute('stroke', '#38BDF8');
+        linePath.setAttribute('stroke-width', '2.5');
+        svg.appendChild(linePath);
+
+        // Generate coordinates for CTR Line
+        const ctrPoints = data.map((d, i) => {
+          const x = padding.left + (chartW / (n - 1)) * i;
+          const y = padding.top + chartH - (d.ctr / maxCtr) * chartH;
+          return { x, y };
+        });
+
+        let ctrLineD = `M ${ctrPoints[0].x} ${ctrPoints[0].y}`;
+        for (let i = 1; i < ctrPoints.length; i++) {
+          ctrLineD += ` L ${ctrPoints[i].x} ${ctrPoints[i].y}`;
+        }
+        const ctrLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        ctrLine.setAttribute('d', ctrLineD);
+        ctrLine.setAttribute('fill', 'none');
+        ctrLine.setAttribute('stroke', '#F59E0B');
+        ctrLine.setAttribute('stroke-width', '2.5');
+        svg.appendChild(ctrLine);
+
+        // CTR Dots
+        ctrPoints.forEach(p => {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', p.x);
+          circle.setAttribute('cy', p.y);
+          circle.setAttribute('r', '3.5');
+          circle.setAttribute('fill', '#F59E0B');
+          circle.setAttribute('stroke', '#0B1120');
+          circle.setAttribute('stroke-width', '1.5');
+          svg.appendChild(circle);
+        });
+
+      } else if (currentMode === 'impressions') {
+        // Grouped Bar Chart: Impressions (Indigo) vs Clicks (Emerald)
+        const maxImps = Math.max(...data.map(d => d.impressions)) * 1.15;
+        const maxClicks = Math.max(...data.map(d => d.clicks)) * 1.2;
+
+        // Left Axis (Impressions)
+        for (let i = 0; i <= 4; i++) {
+          const val = Math.round(maxImps * (1 - i / 4));
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', padding.left - 6);
+          text.setAttribute('y', padding.top + (chartH / 4) * i + 3);
+          text.setAttribute('text-anchor', 'end');
+          text.setAttribute('class', 'axis-label');
+          text.textContent = val > 1000 ? (val / 1000).toFixed(1) + 'k' : val;
+          svg.appendChild(text);
+        }
+
+        const slotW = chartW / n;
+        const barW = Math.max(6, slotW * 0.32);
+
+        data.forEach((d, i) => {
+          const cx = padding.left + slotW * i + slotW / 2;
+
+          // Bar 1: Impressions
+          const h1 = (d.impressions / maxImps) * chartH;
+          const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect1.setAttribute('x', cx - barW - 1.5);
+          rect1.setAttribute('y', padding.top + chartH - h1);
+          rect1.setAttribute('width', barW);
+          rect1.setAttribute('height', h1);
+          rect1.setAttribute('rx', '3');
+          rect1.setAttribute('fill', 'url(#barGradImps)');
+          svg.appendChild(rect1);
+
+          // Bar 2: Clicks (normalized scale)
+          const h2 = (d.clicks / maxClicks) * chartH * 0.85;
+          const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect2.setAttribute('x', cx + 1.5);
+          rect2.setAttribute('y', padding.top + chartH - h2);
+          rect2.setAttribute('width', barW);
+          rect2.setAttribute('height', h2);
+          rect2.setAttribute('rx', '3');
+          rect2.setAttribute('fill', 'url(#barGradClicks)');
+          svg.appendChild(rect2);
+        });
+
+      } else {
+        // Mode: CTR % Trendline + 4.5% Reference Target
+        const maxCtr = Math.max(7.0, Math.max(...data.map(d => d.ctr)) * 1.2);
+
+        // Reference target line at 4.5%
+        const targetY = padding.top + chartH - (4.5 / maxCtr) * chartH;
+        const refLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        refLine.setAttribute('x1', padding.left);
+        refLine.setAttribute('x2', width - padding.right);
+        refLine.setAttribute('y1', targetY);
+        refLine.setAttribute('y2', targetY);
+        refLine.setAttribute('stroke', '#EF4444');
+        refLine.setAttribute('stroke-dasharray', '4 4');
+        refLine.setAttribute('stroke-width', '1.5');
+        svg.appendChild(refLine);
+
+        const refText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        refText.setAttribute('x', width - padding.right - 4);
+        refText.setAttribute('y', targetY - 4);
+        refText.setAttribute('text-anchor', 'end');
+        refText.setAttribute('fill', '#EF4444');
+        refText.setAttribute('font-size', '8.5');
+        refText.setAttribute('font-weight', '700');
+        refText.textContent = 'Benchmark: 4.5%';
+        svg.appendChild(refText);
+
+        const ctrPoints = data.map((d, i) => {
+          const x = padding.left + (chartW / (n - 1)) * i;
+          const y = padding.top + chartH - (d.ctr / maxCtr) * chartH;
+          return { x, y };
+        });
+
+        // Area under CTR curve
+        let areaD = `M ${ctrPoints[0].x} ${padding.top + chartH}`;
+        ctrPoints.forEach(p => areaD += ` L ${p.x} ${p.y}`);
+        areaD += ` L ${ctrPoints[ctrPoints.length - 1].x} ${padding.top + chartH} Z`;
+
+        const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        areaPath.setAttribute('d', areaD);
+        areaPath.setAttribute('fill', 'url(#colorCtr)');
+        svg.appendChild(areaPath);
+
+        // Line
+        let ctrLineD = `M ${ctrPoints[0].x} ${ctrPoints[0].y}`;
+        for (let i = 1; i < ctrPoints.length; i++) {
+          ctrLineD += ` L ${ctrPoints[i].x} ${ctrPoints[i].y}`;
+        }
+        const ctrLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        ctrLine.setAttribute('d', ctrLineD);
+        ctrLine.setAttribute('fill', 'none');
+        ctrLine.setAttribute('stroke', '#F59E0B');
+        ctrLine.setAttribute('stroke-width', '3');
+        svg.appendChild(ctrLine);
+
+        ctrPoints.forEach(p => {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', p.x);
+          circle.setAttribute('cy', p.y);
+          circle.setAttribute('r', '4');
+          circle.setAttribute('fill', '#F59E0B');
+          circle.setAttribute('stroke', '#0B1120');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+        });
+      }
+
+      // X-Axis Date Labels
+      data.forEach((d, i) => {
+        const x = padding.left + (chartW / (n - 1)) * i;
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', height - 6);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'axis-label');
+        text.textContent = d.date;
+        svg.appendChild(text);
+      });
+    }
+
+    // Touch & Pointer Scrubber for Interactive Recharts Tooltip
+    const container = document.getElementById('rechartsContainer');
+    const tooltipBox = document.getElementById('tooltipBox');
+
+    function handleScrub(e) {
+      const rect = container.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const xRel = clientX - rect.left;
+      
+      const width = rect.width;
+      const paddingLeft = (34 / 360) * width;
+      const paddingRight = (34 / 360) * width;
+      const chartW = width - paddingLeft - paddingRight;
+
+      if (xRel < paddingLeft || xRel > width - paddingRight) {
+        tooltipBox.style.opacity = 0;
+        return;
+      }
+
+      const fraction = (xRel - paddingLeft) / chartW;
+      const index = Math.min(activeData.length - 1, Math.max(0, Math.round(fraction * (activeData.length - 1))));
+      const item = activeData[index];
+
+      tooltipBox.innerHTML = `
+        <div class="tooltip-date">📅 ${item.fullDate || item.date}</div>
+        <div class="tooltip-val" style="color: #38BDF8;">
+          <span>Profile Views:</span>
+          <span>${item.views.toLocaleString()}</span>
+        </div>
+        <div class="tooltip-val" style="color: #6366F1;">
+          <span>Ad Impressions:</span>
+          <span>${item.impressions.toLocaleString()}</span>
+        </div>
+        <div class="tooltip-val" style="color: #10B981;">
+          <span>Ad Clicks:</span>
+          <span>${item.clicks.toLocaleString()}</span>
+        </div>
+        <div class="tooltip-val" style="color: #F59E0B;">
+          <span>Ad CTR:</span>
+          <span>${item.ctr.toFixed(2)}%</span>
+        </div>
+        <div class="tooltip-val" style="color: #E2E8F0; font-size: 9.5px;">
+          <span>Direct Leads:</span>
+          <span>${item.leads || Math.round(item.clicks * 0.22)}</span>
+        </div>
+      `;
+
+      let posX = xRel + 12;
+      if (posX + 140 > width) {
+        posX = xRel - 148;
+      }
+      tooltipBox.style.transform = `translate(${posX}px, 20px)`;
+      tooltipBox.style.opacity = 1;
+    }
+
+    container.addEventListener('mousemove', handleScrub);
+    container.addEventListener('touchmove', handleScrub, { passive: true });
+    container.addEventListener('touchstart', handleScrub, { passive: true });
+    container.addEventListener('mouseleave', () => { tooltipBox.style.opacity = 0; });
+    container.addEventListener('touchend', () => { tooltipBox.style.opacity = 0; });
+
+    // Bridge for Android ViewModel injection
+    window.updateDashboardData = function(jsonStr) {
+      try {
+        const parsed = JSON.parse(jsonStr);
+        if (parsed.businessName) {
+          document.getElementById('businessTitle').textContent = parsed.businessName + ' • ' + (parsed.bcnId || '');
+        }
+        if (parsed.dailyMetrics && parsed.dailyMetrics.length > 0) {
+          activeData = parsed.dailyMetrics;
+          updateKPIs();
+          renderRechartsChart();
+        }
+      } catch (err) {
+        console.error("Failed to parse Android injected data:", err);
+      }
+    };
+
+    // Initial load
+    updateKPIs();
+    renderRechartsChart();
+  </script>
+</body>
+</html>

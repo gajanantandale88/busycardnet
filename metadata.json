@@ -1,0 +1,7 @@
+{
+  "name": "BusyCardNet",
+  "description": "Digital visiting cards, local business discovery, 500m service requests, advertising, and marketplace network.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
